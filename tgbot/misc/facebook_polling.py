@@ -76,7 +76,7 @@ async def get_leads_from_form(config: Config, form_id: int):
     data = await request('get', url)
     last_update_time = await get_last_update_time(config)
     valid_leads = []
-    for lead in data['data']:
+    for lead in reversed(data['data']):
         lead_created = datetime.datetime.strptime(
             lead['created_time'], 
             '%Y-%m-%dT%H:%M:%S%z',
