@@ -164,7 +164,10 @@ async def get_leads_from_form(config: Config, form_id: int):
         if lead_created > last_update_time:
             lead['form_id'] = form_id
             valid_leads.append(lead)
-    if valid_leads: await update_last_update_time(config, lead['created_time']) 
+        try:
+            await update_last_update_time(config, lead['created_time']) 
+        except UnboundLocalError:
+            pass
     return valid_leads
 
 def get_form_ids(data: dict):
