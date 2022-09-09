@@ -7,6 +7,8 @@ from typing import Literal, NamedTuple
 import aioredis
 from aiogram import Bot
 from asgiref.sync import sync_to_async
+from pydantic import BaseModel, validator
+from aiohttp.client_exceptions import ServerTimeoutError
 from aiogram.utils.exceptions import BotBlocked, CantInitiateConversation
 
 from tgbot.config import Config
@@ -18,22 +20,100 @@ GET_LEADS_API_URL = \
 GET_FORMS_API_URL = \
     'https://graph.facebook.com/v14.0/{page_id}/leadgen_forms?access_token={access_token}'
 
-async def request(method: Literal['get', 'post'], url: str, **kwargs) -> dict:
+class Lead(BaseModel):
+    id: str
+    form_id: str
+    data: str
+    created_time: datetime.datetime
+    
+    @classmethod
+    def parse_lead(cls, lead: dict) -> 'Lead':
+        return cls(
+            id=lead['id'],
+            form_id=lead['form_id'],
+            created_time=datetime.datetime.strptime(
+                lead['created_time'], 
+                '%Y-%m-%dT%H:%M:%S%z'
+            ),
+            data='\n'.join(' '.join(field['name'].split('_')).capitalize() + ': ' + ' '.join(field['values']) for field in lead['field_data'])
+            )
+
+async def request_base(
+    method: Literal['get', 'post'], 
+    url: str, 
+    **kwargs
+    ) -> dict:
     logger = logging.getLogger(__name__)
     async with aiohttp.ClientSession() as session:
         async with session.request(method, url, **kwargs) as response:
-            if response.status != 200:
+            if response.status == 400:
                 logger.error(
                     f'{response.status} {response.reason}\n'
                     f'{await response.text()}\n {url}{kwargs}'
                     )
-                await asyncio.sleep(5)
                 await session.close()
-                return await request(method, url, **kwargs)
             response_data = await response.json()
-        await session.close()
     return response_data
 
+async def is_valid_url(url: str) -> bool:
+    logger = logging.getLogger(__name__)
+    async with aiohttp.ClientSession() as session:
+        async with session.request('get', url) as response:
+            if response.status == 404:
+                await session.close()
+                return False
+    return True
+
+async def request(method: Literal['get', 'post'], url: str, **kwargs):
+    try:
+        result = await request_base(method, url, **kwargs)
+    except ServerTimeoutError:
+        logging.error(f'ServerTimeoutError {url} {kwargs}')
+        return
+    return result 
+    
+async def request_facebook_api(method: Literal['get', 'post'], url: str, **kwargs):
+    data = await request(method, url, **kwargs)
+    if isinstance(data, dict): return data
+    if data == 100:
+        pass
+        
+async def create_deal(config: Config, lead: Lead):
+    PIPEDRIVE_CREATE_DEAL_URL = \
+        'https://{domain}.pipedrive.com/api/v1/deals?api_token={api_key}'
+    lead_name = lead.data.split('\n')[0].split(': ')[1]
+    person_id = await create_person(config, lead)
+    deal = await request(
+        method='post',
+        url=PIPEDRIVE_CREATE_DEAL_URL.format(
+            domain=config.misc.pipedrive_domain,
+            api_key=config.misc.pipedrive_api_key,
+        ),
+        data={
+            'title': f'----{lead_name}----',
+            'person_id': person_id,
+        }
+
+    )
+    
+async def create_person(config: Config, lead: Lead):
+    PIPEDRIVE_CREATE_PERSON_URL = \
+        'https://{domain}.pipedrive.com/api/v1/persons?api_token={api_key}'
+    lead_name = lead.data.split('\n')[0].split(': ')[1]
+    lead_phone = lead.data.split('\n')[1].split(': ')[1]
+    person = await request(
+        method='post',
+        url=PIPEDRIVE_CREATE_PERSON_URL.format(
+            domain=config.misc.pipedrive_domain,
+            api_key=config.misc.pipedrive_api_key,
+        ),
+        data={
+            'name': lead_name,
+            'phone': [lead_phone],
+        }
+    )
+    return person['data']['id']
+    
 async def get_last_worker_telegram_id(config: Config) -> Worker.telegram_id:
     redis = await aioredis.Redis(host=config.redis.host)
     last_worker_telegram_id = await redis.get('last_worker_telegram_id')
@@ -122,24 +202,6 @@ async def make_worker_telegram_id_list(config: Config):
                 ]
     await check_workers(workers_telegram_ids, config)
     return workers_telegram_ids
-
-class Lead(NamedTuple):
-    id: str
-    form_id: str
-    data: str
-    created_time: datetime.datetime
-    
-    @classmethod
-    def parse_lead(cls, lead: dict) -> 'Lead':
-        return cls(
-            id=lead['id'],
-            form_id=lead['form_id'],
-            created_time=datetime.datetime.strptime(
-                lead['created_time'], 
-                '%Y-%m-%dT%H:%M:%S%z'
-            ),
-            data='\n'.join(' '.join(field['name'].split('_')).capitalize() + ': ' + ' '.join(field['values']) for field in lead['field_data'])
-            )
 
 async def send_leads_loop(
     workers_telegram_ids: list[Worker.telegram_id], 

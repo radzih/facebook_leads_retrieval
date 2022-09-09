@@ -20,6 +20,8 @@ class TgBot:
 
 @dataclass
 class Miscellaneous:
+    pipedrive_api_key: str
+    pipedrive_domain: str
     other_params: str = None
 
 
@@ -65,5 +67,8 @@ def load_config(path: str = None):
         redis=Redis(
             host=env.str('REDIS_HOST')
         ),
-        misc=Miscellaneous()
+        misc=Miscellaneous(
+            pipedrive_api_key=env.str('PIPEDRIVE_API_KEY'),
+            pipedrive_domain=env.str('PIPEDRIVE_DOMAIN'),
+        )
     )
