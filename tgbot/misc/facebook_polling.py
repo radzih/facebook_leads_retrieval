@@ -217,6 +217,7 @@ async def send_leads_loop(
         worker_telegram_id = workers_telegram_ids[index%len(workers_telegram_ids)]
         lead = leads[-1]
         index += 1
+        await create_deal(config, lead)
         try:
             await bot.send_message(
                 chat_id=worker_telegram_id,
