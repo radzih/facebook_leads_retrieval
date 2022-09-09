@@ -23,6 +23,7 @@ marshmallow==3.17.1
 multidict==6.0.2
 packaging==21.3
 pycountry==22.3.5
+pydantic==1.10.2
 pyparsing==3.0.9
 python-dotenv==0.20.0
 pytz==2022.2.1
