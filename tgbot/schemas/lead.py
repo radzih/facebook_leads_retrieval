@@ -1,17 +1,20 @@
 import datetime
 import logging
-import re
+from platform import platform
+from typing import Any, Literal
 
 from pydantic import BaseModel, validator
 
 
-
 class Lead(BaseModel):
     id: str
-    form_id: str = None
     created_time: datetime.datetime
     phone: str
     name: str
+    ad_name: str
+    campaign_name: str
+    adset_name: str
+    platform: str
     
     @validator('phone')
     def phone_validator(cls, input_phone: str):
@@ -25,9 +28,24 @@ class Lead(BaseModel):
     
     @validator('created_time')
     def created_time_validator(cls, input_time):
+        FACEBOOK_TIME_DIFFERENCE = 3
         if isinstance(input_time, str):
-            return datetime.datetime.strptime(input_time, '%Y-%m-%d %H:%M:%S%z')
-        return input_time
+            created_time = datetime.datetime.strptime(input_time, '%Y-%m-%dT%H:%M:%S%z')
+            return created_time + datetime.timedelta(
+                hours=FACEBOOK_TIME_DIFFERENCE
+                )
+        return input_time + datetime.timedelta(
+            hours=FACEBOOK_TIME_DIFFERENCE
+        )
+    
+    @validator('platform')
+    def platform_validator(cls, input_platform: str):
+        if input_platform == 'fb':
+            return 'Facebook'
+        elif input_platform == 'ig':
+            return 'Instagram'
+        else:
+            return input_platform
 
     @classmethod
     def parse_lead(cls, lead: dict) -> 'Lead':
@@ -36,11 +54,13 @@ class Lead(BaseModel):
                 phone = field['values'][0]
             elif 'name' in field['name']:
                 name = field['values'][0]
-        logging.debug(f'Phone: {phone}, name: {name}')
         return cls(
             id=lead['id'],
-            form_id=lead['form_id'],
             created_time=lead['created_time'],
             name=name,
-            phone=phone
+            phone=phone,
+            ad_name=lead['ad_name'],
+            campaign_name=lead['campaign_name'],
+            adset_name=lead['adset_name'],
+            platform=lead['platform'],
             )

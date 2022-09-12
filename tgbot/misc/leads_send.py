@@ -7,6 +7,7 @@ from aiogram.utils.exceptions import BotBlocked, CantInitiateConversation
 from leads_agregator.exceptions.agregator_exceptions import NoNewLeads
 
 from tgbot.config import Config
+from tgbot.keyboards.inline import pipedrive_deal_markup
 from tgbot.services import db
 from tgbot.exceptions.workers import NoActiveWorkers
 from tgbot.services.redis import redis, update_last_worker_telegram_id
@@ -54,17 +55,25 @@ async def send_leads_loop(
         index += 1
         lead = leads.pop(-1)
         worker_telegram_id = workers_telegram_ids[index%len(workers_telegram_ids)]
-        await pipedrive.create_deal(config, lead)
+        deal_id = await pipedrive.create_deal(config, lead)
         try:
             await bot.send_message(
                 chat_id=worker_telegram_id,
                 text=(
                     f'Lead ID: {lead.id}\n'
-                    f'Form ID: {lead.form_id}\n'
-                    f'Created time: {lead.created_time.strftime("%d.%m.%Y %H:%M:%S")}\n'
+                    f'{"-"*50}\n'
+                    f'Campaign name: {lead.campaign_name}\n'
+                    f'Adset name: {lead.adset_name}\n'
+                    f'Ad name: {lead.ad_name}\n'
+                    f'{"-"*50}\n'
                     f'Name: {lead.name}\n'
                     f'Phone: {lead.phone}\n'
-                )
+                    f'Created time: {lead.created_time.strftime("%d.%m.%Y %H:%M:%S")}\n'
+                    f'Platform: {lead.platform}\n'
+                ),
+                reply_markup=await pipedrive_deal_markup(
+                    deal_id, config.misc.pipedrive_domain
+                    ),
             )
         except (CantInitiateConversation, BotBlocked):
             continue

@@ -169,3 +169,20 @@ async def start_work_markup(bot: Bot) -> InlineKeyboardMarkup:
         ]
     ]
 )
+
+async def pipedrive_deal_markup(
+    deal_id: int,
+    pipedrive_domain: str
+    ) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text='View deal',
+                    url='https://{}.pipedrive.com/deal/{}'.format(
+                        pipedrive_domain, deal_id
+                    )
+                )
+            ]
+        ]
+    )

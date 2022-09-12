@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime
 import logging
 from apscheduler.schedulers.blocking import BlockingScheduler
 
@@ -21,12 +22,12 @@ def main():
 
 if __name__ == '__main__':
     logging.basicConfig(
-        level=logging.INFO,
+        level=logging.DEBUG,
         format=u'%(filename)s:%(lineno)d #%(levelname)-8s [%(asctime)s] - %(name)s - %(message)s',
     ) 
     logging.getLogger('apscheduler.executors.default').setLevel(logging.WARNING)
     logger = logging.getLogger(__name__)
     logger.info("Starting agregator")
     scheduler = BlockingScheduler()
-    scheduler.add_job(main, 'interval', seconds=5)
+    scheduler.add_job(main, 'interval', minutes=5, next_run_time=datetime.now())
     scheduler.start()

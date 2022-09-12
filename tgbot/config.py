@@ -28,7 +28,7 @@ class Miscellaneous:
 @dataclass
 class Facebook:
     access_token: str
-    page_id: int
+    ad_account_id: int
 
 @dataclass
 class Redis:
@@ -62,7 +62,7 @@ def load_config(path: str = None):
         ),
         facebook=Facebook(
             access_token=env.str('FB_ACCESS_TOKEN'),
-            page_id=env.str('FB_PAGE_ID')
+            ad_account_id=env.int('FB_AD_ACCOUNT_ID')
         ),
         redis=Redis(
             host=env.str('REDIS_HOST')

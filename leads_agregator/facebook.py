@@ -1,50 +1,67 @@
-from ast import operator
-from asyncio.log import logger
-import datetime
 import logging
 import time
+from typing import Iterable
 
 import pydantic
 
-from tgbot.config import Config, load_config 
+from tgbot.config import Config
 from tgbot.schemas.lead import Lead
 from tgbot.misc.request import request
-from leads_agregator.exceptions.agregator_exceptions import NoNewLeads
+from leads_agregator.exceptions.agregator_exceptions import MissingPermissions, NoNewLeads
 from tgbot.services.redis import get_last_update_time,\
     update_last_update_time
 
 
-GET_FORMS_API_URL = (
-        'https://graph.facebook.com/v14.0/{page_id}/leadgen_forms'
-        '?access_token={access_token}'
+GET_ADS_API_URL = (
+        'https://graph.facebook.com/v14.0/act_{ad_account_id}/ads'
+        '?access_token={access_token}&fields=id,status'
         )
 
 GET_LEADS_API_URL = (
-    'https://graph.facebook.com/v14.0/{form_id}/leads'
+    'https://graph.facebook.com/v14.0/{ad_id}/leads'
     '?access_token={access_token}'    
 )
 
 FACEBOOK_API_FILTER = (
-    '&filtering=[{{"field":"{field}","operator":"{operator}","value":"{value}"}}]'
+    '&filtering=[{filter}]'
+)
+
+FACEBOOK_GET_LEAD_INFO_URL = (
+    'https://graph.facebook.com/v14.0/{lead_id}'
+    '?access_token={access_token}'
+    '&fields=field_data,ad_name,campaign_name,adset_name,created_time,platform'
 )
 
 async def get_leads(config: Config) -> list[Lead]:
-    get_forms_url = GET_FORMS_API_URL.format(
-        page_id=config.facebook.page_id, 
+    get_ads_url = GET_ADS_API_URL.format(
+        ad_account_id=config.facebook.ad_account_id, 
         access_token=config.facebook.access_token,
         )
-    data = await request('get', get_forms_url)
-    forms_ids = get_form_ids(data)
-    leads = []
-    for form in forms_ids:
-        form_leads = await get_leads_from_form(config, form)
-        leads.extend(form_leads)
-    await update_last_update_time(config, time.time()) 
-    if leads == []: raise NoNewLeads
-    leads = parse_leads(leads)
+    data = await request('get', get_ads_url)
+    ads_ids = get_ads_ids(data)
+    leads_ids = []
+    for ad_id in ads_ids:
+        ad_leads_ids = await get_leads_ids_from_ad(config, ad_id)
+        leads_ids.extend(ad_leads_ids)
+    await update_last_update_time(config, int(time.time())) 
+    if leads_ids == []: raise NoNewLeads
+    leads_datas = await get_leads_data(leads_ids, config)
+    leads = parse_leads(leads_datas)
     return leads
 
-def parse_leads(leads: list) -> list[Lead]:
+async def get_leads_data(leads_ids: list[int], config: Config) -> list[dict]:
+    leads = []
+    for lead_id in leads_ids:
+        get_lead_info_url = FACEBOOK_GET_LEAD_INFO_URL.format(
+            lead_id=lead_id,
+            access_token=config.facebook.access_token,
+            )
+        lead_data = await request('get', get_lead_info_url)
+        logging.debug(f'Facebook lead info: {lead_data}')
+        leads.append(lead_data)
+    return leads
+
+def parse_leads(leads: Iterable[dict]) -> list[Lead]:
     parsed_leads = []
     for lead in leads:
         try:
@@ -55,29 +72,33 @@ def parse_leads(leads: list) -> list[Lead]:
     return parsed_leads
         
 
-def get_form_ids(data: dict) -> list[int]:
+def get_ads_ids(data: dict) -> Iterable[int]:
     logging.debug(f'Facebook forms: {data}')
     for form in data['data']:
         if form['status'] == 'ACTIVE':
             yield form['id']
 
-async def get_leads_from_form(config: Config, form_id: int) -> list[dict]:
+async def get_leads_ids_from_ad(config: Config, ad_id: int) -> list[int]:
     last_update_time = await get_last_update_time(config)
     get_leads_url = GET_LEADS_API_URL.format(
-        form_id=form_id, 
+        ad_id=ad_id,
         access_token=config.facebook.access_token,
         ) + FACEBOOK_API_FILTER.format(
-            field='time_created',
-            operator='GREATER_THAN',
-            value=last_update_time,
+            filter=str(
+                {
+                    'field': 'time_created',
+                    'operator': 'GREATER_THAN',
+                    'value': last_update_time,
+                }
+            )
         )
-    data = await request('get', get_leads_url)
-    valid_leads = []
+    data = await request('get', get_leads_url, expected_status=(200, 400))
+    if data.get('error'):
+        return []
     logging.debug(f'Facebook leads: {data}')
-    for lead in reversed(data['data']):
-        lead['form_id'] = form_id
-        valid_leads.append(lead)
-    return valid_leads
+    leads = list(lead['id'] for lead in data['data'])
+    return leads
+
 
 
 

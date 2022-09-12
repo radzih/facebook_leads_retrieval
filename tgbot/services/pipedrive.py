@@ -1,12 +1,13 @@
+import logging
 from tgbot.config import Config
 from tgbot.schemas.lead import Lead
 from tgbot.misc.request import request
 
-async def create_deal(config: Config, lead: Lead):
+async def create_deal(config: Config, lead: Lead) -> int:
     PIPEDRIVE_CREATE_DEAL_URL = \
         'https://{domain}.pipedrive.com/api/v1/deals?api_token={api_key}'
     person_id = await create_person(config, lead)
-    await request(
+    data = await request(
         method='post',
         url=PIPEDRIVE_CREATE_DEAL_URL.format(
             domain=config.misc.pipedrive_domain,
@@ -18,6 +19,8 @@ async def create_deal(config: Config, lead: Lead):
         },
         expected_status=201,
     )
+    logging.debug(f'Pipedrive deal created: {data}')
+    return data['data']['id']
     
 async def create_person(config: Config, lead: Lead):
     PIPEDRIVE_CREATE_PERSON_URL = \
