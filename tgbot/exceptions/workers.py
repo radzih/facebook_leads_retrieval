@@ -1,0 +1,3 @@
+class NoActiveWorkers(Exception):
+    pass
+

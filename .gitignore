@@ -61,3 +61,8 @@ venv.bak/
 .pyre/
 .idea/*
 .env
+
+# DB
+db.sqlite3
+posgres_data
+web/db.sqlite3

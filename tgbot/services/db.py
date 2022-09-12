@@ -1,5 +1,6 @@
-import logging
+from leads_agregator.exceptions.agregator_exceptions import NoNewLeads
 from web.app.models import *
+from tgbot.schemas.lead import Lead as LeadSchema
 
 def get_or_create_worker(**kwargs):
     return Worker.objects.get_or_create(**kwargs)
@@ -45,3 +46,22 @@ def get_next_worker_telegram_id(previous_worker_telegram_id):
             id__gt=worker.id,
             stop=False,
         ).order_by('id').first().telegram_id
+
+def get_new_leads() -> list[LeadSchema]:
+    if not Lead.objects.filter(is_new=True).exists():
+        raise NoNewLeads
+    return list(
+        LeadSchema(
+            id=lead.id,
+            form_id=lead.form_id,
+            created_time=lead.created_time,
+            name=lead.name,
+            phone=lead.phone,
+            )
+        for lead in Lead.objects.filter(is_new=True)
+        )
+            
+def update_lead_is_new_status(lead_id: int):
+    lead = Lead.objects.get(id=lead_id)
+    lead.is_new = False
+    lead.save()

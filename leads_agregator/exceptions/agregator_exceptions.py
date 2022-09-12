@@ -1,0 +1,2 @@
+class NoNewLeads(Exception):
+    pass
