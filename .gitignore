@@ -2,7 +2,6 @@
 __pycache__/
 *.py[cod]
 *$py.class
-
 # C extensions
 *.so
 
@@ -64,5 +63,5 @@ venv.bak/
 
 # DB
 db.sqlite3
-posgres_data
-web/db.sqlite3
+posgres
+*.sqlite3

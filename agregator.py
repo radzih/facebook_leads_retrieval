@@ -22,12 +22,12 @@ def main():
 
 if __name__ == '__main__':
     logging.basicConfig(
-        level=logging.DEBUG,
+        level=logging.INFO,
         format=u'%(filename)s:%(lineno)d #%(levelname)-8s [%(asctime)s] - %(name)s - %(message)s',
     ) 
     logging.getLogger('apscheduler.executors.default').setLevel(logging.WARNING)
     logger = logging.getLogger(__name__)
     logger.info("Starting agregator")
     scheduler = BlockingScheduler()
-    scheduler.add_job(main, 'interval', minutes=5, next_run_time=datetime.now())
+    scheduler.add_job(main, 'interval', minutes=5)
     scheduler.start()

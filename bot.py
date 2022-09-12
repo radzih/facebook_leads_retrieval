@@ -44,18 +44,6 @@ def register_all_handlers(dp):
     register_start_handlers(dp)
 
 
-
-
-async def set_default_values_for_redis(config: Config):
-    import time
-    from tgbot.services.redis import redis
-    await redis(
-        method='set',
-        key='last_update_time',
-        redis_host=config.redis.host,
-        value=1662109244
-    )
-
 async def main():
     logging.basicConfig(
         level=logging.INFO,
@@ -71,8 +59,7 @@ async def main():
     scheduler = AsyncIOScheduler()
 
     bot['config'] = config
-    scheduler.add_job(send_leads, 'interval', minutes=5, kwargs={'config': config}, next_run_time=datetime.now())
-    await set_default_values_for_redis(config)
+    scheduler.add_job(send_leads, 'interval', minutes=5, kwargs={'config': config})
     register_all_middlewares(dp, config)
     register_all_filters(dp)
     register_all_handlers(dp)
