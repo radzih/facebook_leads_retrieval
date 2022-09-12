@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime
 import logging
 
 import aioredis
@@ -11,7 +12,7 @@ from tgbot.misc.setup_django import setup_django; setup_django()
 from tgbot.config import Config, load_config
 from tgbot.filters.admin import AdminFilter
 from tgbot.filters.worker import WorkerFilter
-from tgbot.misc.facebook_polling import send_leads
+from tgbot.misc.leads_send import send_leads
 from tgbot.handlers.add import register_add_handlers
 from tgbot.handlers.view import register_view_handlers
 from tgbot.handlers.start import register_start_handlers
@@ -52,7 +53,7 @@ async def set_default_values_for_redis(config: Config):
         method='set',
         key='last_update_time',
         redis_host=config.redis.host,
-        value=time.time()
+        value=1662109244
     )
 
 async def main():
@@ -70,7 +71,7 @@ async def main():
     scheduler = AsyncIOScheduler()
 
     bot['config'] = config
-    scheduler.add_job(send_leads, 'interval', seconds=5, kwargs={'config': config})
+    scheduler.add_job(send_leads, 'interval', minutes=5, kwargs={'config': config}, next_run_time=datetime.now())
     await set_default_values_for_redis(config)
     register_all_middlewares(dp, config)
     register_all_filters(dp)

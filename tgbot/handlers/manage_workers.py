@@ -4,7 +4,7 @@ from aiogram.dispatcher import Dispatcher
 from aiogram.types import Message, CallbackQuery
 from asgiref.sync import sync_to_async
 from tgbot.config import Config
-from tgbot.misc.facebook_polling import NoActiveWorkers, get_last_worker_telegram_id, update_last_worker_telegram_id
+from tgbot.misc.leads_send import NoActiveWorkers, get_last_worker_telegram_id, update_last_worker_telegram_id
 
 from web.app.models import Worker
 from tgbot.services.db import get_next_worker_telegram_id, get_worker, stop_or_activate_worker_sync, \

@@ -1,5 +1,5 @@
 from tgbot.misc.setup_django import setup_django; setup_django()
-from tgbot.misc.facebook_polling import create_deal, create_person, get_last_worker_telegram_id, update_last_worker_telegram_id, get_last_update_time, Lead
+from tgbot.misc.leads_send import create_deal, create_person, get_last_worker_telegram_id, update_last_worker_telegram_id, get_last_update_time, Lead
 from tgbot.config import load_config, Config
 import asyncio
 

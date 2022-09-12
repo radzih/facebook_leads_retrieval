@@ -1,3 +1,4 @@
+from platform import platform
 from django.db import models
 
 # Create your models here.
@@ -16,8 +17,11 @@ class Lead(models.Model):
         db_table = 'leads'
         
     id = models.BigIntegerField(primary_key=True)
-    form_id = models.BigIntegerField()
     created_time = models.DateTimeField()
     name = models.CharField(max_length=255)
     phone = models.CharField(max_length=14)
     is_new = models.BooleanField(default=True)
+    campaign_name = models.CharField(max_length=255)
+    ad_name = models.CharField(max_length=255)
+    adset_name = models.CharField(max_length=255)
+    platform = models.CharField(max_length=255)
