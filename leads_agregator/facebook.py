@@ -43,8 +43,8 @@ async def get_leads(config: Config) -> list[Lead]:
     for ad_id in ads_ids:
         ad_leads_ids = await get_leads_ids_from_ad(config, ad_id)
         leads_ids.extend(ad_leads_ids)
-    await update_last_update_time(config, int(time.time())) 
     if leads_ids == []: raise NoNewLeads
+    await update_last_update_time(config, int(time.time())) 
     leads_datas = await get_leads_data(leads_ids, config)
     leads = parse_leads(leads_datas)
     return leads

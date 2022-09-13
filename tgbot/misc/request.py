@@ -22,7 +22,7 @@ async def request(
             if response.status not in expected_status:
                 logger.error(
                     f'{response.status} {response.reason}\n'
-                    f'{await response.text()}\n {url}{kwargs}'
+                    f'{await response.text()}\n {url}\n{kwargs}'
                     )
                 await session.close()
             response_data = await response.text()
