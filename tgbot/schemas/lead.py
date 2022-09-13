@@ -47,6 +47,10 @@ class Lead(BaseModel):
         else:
             return input_platform
 
+    @validator('name')
+    def name_validator(cls, input_name: str):
+        return input_name.title()
+        
     @classmethod
     def parse_lead(cls, lead: dict) -> 'Lead':
         for field in lead['field_data']:
