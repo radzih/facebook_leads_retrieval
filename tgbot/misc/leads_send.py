@@ -61,11 +61,11 @@ async def send_leads_loop(
                 chat_id=worker_telegram_id,
                 text=(
                     f'Lead ID: {lead.id}\n'
-                    f'{"-"*50}\n'
+                    f'{"-"*25}\n'
                     f'Campaign name: {lead.campaign_name}\n'
                     f'Adset name: {lead.adset_name}\n'
                     f'Ad name: {lead.ad_name}\n'
-                    f'{"-"*50}\n'
+                    f'{"-"*25}\n'
                     f'Name: {lead.name}\n'
                     f'Phone: {lead.phone}\n'
                     f'Created time: {lead.created_time.strftime("%d.%m.%Y %H:%M:%S")}\n'

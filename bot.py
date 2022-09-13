@@ -59,7 +59,7 @@ async def main():
     scheduler = AsyncIOScheduler()
 
     bot['config'] = config
-    scheduler.add_job(send_leads, 'interval', minutes=5, kwargs={'config': config})
+    scheduler.add_job(send_leads, 'interval', minutes=2, kwargs={'config': config})
     register_all_middlewares(dp, config)
     register_all_filters(dp)
     register_all_handlers(dp)
