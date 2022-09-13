@@ -16,6 +16,11 @@ async def create_deal(config: Config, lead: Lead) -> int:
         data={
             'title': f'----{lead.name}----',
             'person_id': person_id,
+            config.misc.pipedrive_platform_key: lead.platform,
+            config.misc.pipedrive_ad_key: lead.ad_name,
+            config.misc.pipedrive_adset_key: lead.adset_name,
+            config.misc.pipedrive_campaign_key: lead.campaign_name,
+            
         },
         expected_status=201,
     )

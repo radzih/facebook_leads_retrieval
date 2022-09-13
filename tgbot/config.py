@@ -22,6 +22,10 @@ class TgBot:
 class Miscellaneous:
     pipedrive_api_key: str
     pipedrive_domain: str
+    pipedrive_platform_key: str
+    pipedrive_campaign_key: str
+    pipedrive_adset_key: str
+    pipedrive_ad_key: str
     other_params: str = None
 
 
@@ -70,5 +74,9 @@ def load_config(path: str = None):
         misc=Miscellaneous(
             pipedrive_api_key=env.str('PIPEDRIVE_API_KEY'),
             pipedrive_domain=env.str('PIPEDRIVE_DOMAIN'),
+            pipedrive_adset_key=env.str('PIPEDRIVE_ADSET_KEY'),
+            pipedrive_platform_key=env.str('PIPEDRIVE_PLATFORM_KEY'),
+            pipedrive_ad_key=env.str('PIPEDRIVE_AD_KEY'),
+            pipedrive_campaign_key=env.str('PIPEDRIVE_CAMPAIGN_KEY'),
         )
     )
